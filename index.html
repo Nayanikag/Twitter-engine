@@ -1,0 +1,350 @@
+﻿
+<!DOCTYPE html>
+
+<meta charset="utf-8" />
+
+<title>Twitter</title>
+
+<script language="javascript" type="text/javascript">
+    var wsUri = "ws://127.0.0.1:8082/websocket";
+    var output;
+    var user;
+    var retw;
+
+  function init()
+  {
+    output = document.getElementById("output");
+    var log_btn = document.createElement("BUTTON")
+    log_btn.innerHTML = "LOGIN";
+    output.appendChild(log_btn);
+    log_btn.onclick = function (evt) { func_login(evt) };
+
+
+    var reg_btn = document.createElement("BUTTON")
+    reg_btn.innerHTML = "REGISTER";
+    output.appendChild(reg_btn);
+    reg_btn.style = "margin-left:30px;"
+    reg_btn.onclick = function (evt) { func_register(evt) };
+    
+  }
+
+  function testWebSocket()
+  {
+    websocket = new WebSocket(wsUri);
+    websocket.onopen = function(evt) { onOpen(evt) };
+    websocket.onclose = function(evt) { onClose(evt) };
+    websocket.onmessage = function(evt) { onMessage(evt) };
+    websocket.onerror = function(evt) { onError(evt) };
+  }
+
+function onOpen(evt)
+{  
+      
+}
+
+
+function func_login(evt) {
+
+    testWebSocket();
+
+    writeToScreen("Enter the username to Login")
+    var login = document.createElement('INPUT');
+    login.type = "text";
+    output.appendChild(login);
+    var log_btn = document.createElement("BUTTON")
+    log_btn.innerHTML = "LOGIN";
+    output.appendChild(log_btn);
+    log_btn.style.wordWrap = "break-word";
+    log_btn.onclick = function (evt) { func_after_login(evt, login.value) };
+}
+
+function func_after_logout(evt, val) {
+    doSend(JSON.stringify({ "func": "Logout", "username": val, "success": "True" }))
+
+
+}
+function func_after_login(evt, val)
+{
+    doSend(JSON.stringify({"func":"Login","username":val}))
+      
+}
+
+function func_register(evt) {
+    testWebSocket();
+    writeToScreen("Enter the username to Register")
+    var register = document.createElement('INPUT');
+    register.type = "text";
+    output.appendChild(register);
+    var log_btn = document.createElement("BUTTON")
+    log_btn.innerHTML = "REGISTER";
+    output.appendChild(log_btn);
+    log_btn.style.wordWrap = "break-word";
+    log_btn.onclick = function (evt) { func_after_register(evt, register.value) };
+}
+function func_after_register(evt, val) {
+    doSend(JSON.stringify({ "func": "Register", "username": val}))
+
+}
+
+
+  function func_tweet(evt, user)
+  {
+      writeToScreen("Enter your tweet")
+      var tweet = document.createElement('INPUT');
+      tweet.type = "text";
+      output.appendChild(tweet);
+      var enter = document.createElement("BUTTON")
+      enter.innerHTML = "ENTER";
+      output.appendChild(enter);
+      enter.style.wordWrap = "break-word";
+      enter.onclick = function (evt) { func_after_tweet(evt, user, tweet.value) };
+
+  }
+  function func_after_tweet(evt, user, tweet) {
+      doSend(JSON.stringify({ "func": "Tweet", "username": user, "input": tweet }))
+  }
+
+  function func_query_hashtag(evt, user) {
+      writeToScreen("Search for a hashtag with #")
+      var hashtag = document.createElement('INPUT')
+      hashtag.type = "text";
+      output.appendChild(hashtag);
+      var search = document.createElement("BUTTON")
+      search.innerHTML = "SEARCH";
+      output.appendChild(search);
+      search.style.wordWrap = "break-word";
+      search.onclick = function (evt) { func_after_query_hashtag(evt, user, hashtag.value) };
+  }
+
+function func_after_query_hashtag(evt, user, hashtag) {
+    doSend(JSON.stringify({ "func": "Hashtag", "username": user, "input": hashtag }))
+}
+
+function func_query_mention(evt, user) {
+    writeToScreen("Search for a Mention without @")
+    var mention = document.createElement('INPUT')
+    mention.type = "text";
+    output.appendChild(mention);
+    var search = document.createElement("BUTTON")
+    search.innerHTML = "SEARCH";
+    output.appendChild(search);
+    search.style.wordWrap = "break-word";
+    search.onclick = function (evt) { func_after_query_mention(evt, user, mention.value) };
+}
+function func_after_query_mention(evt, user, mention) {
+    doSend(JSON.stringify({ "func": "Mention", "username": user, "input": mention }))
+}
+
+function func_subscribe(evt, user) {
+    writeToScreen("Search for a user to subscribe")
+    var subscribe = document.createElement('INPUT')
+    subscribe.type = "text";
+    output.appendChild(subscribe);
+    var enter = document.createElement("BUTTON")
+    enter.innerHTML = "SUBSCRIBE";
+    output.appendChild(enter);
+    enter.style.wordWrap = "break-word";
+    enter.onclick = function (evt) { func_after_subscribe(evt, user, subscribe.value) };
+}
+function func_after_subscribe(evt, user, subscribe) {
+    doSend(JSON.stringify({ "func": "Subscribe", "username": user, "input": subscribe }))
+}
+
+function func_unsubscribe(evt, user) {
+    writeToScreen("Search for a user to unsubscribe")
+    var unsubscribe = document.createElement('INPUT')
+    unsubscribe.type = "text";
+    output.appendChild(unsubscribe);
+    var enter = document.createElement("BUTTON")
+    enter.innerHTML = "UNSUBSCRIBE";
+    output.appendChild(enter);
+    enter.style.wordWrap = "break-word";
+    enter.onclick = function (evt) { func_after_unsubscribe(evt, user, unsubscribe.value) };
+}
+function func_after_unsubscribe(evt, user, unsubscribe) {
+    doSend(JSON.stringify({ "func": "Unsubscribe", "username": user, "input": unsubscribe }))
+}
+  
+  function onClose(evt)
+  {
+      writeToScreen(user + " logged out!!");
+      websocket.close();
+      setTimeout(function () {
+          document.location.reload()
+      }, 2000);
+      
+  }
+
+  function onMessage(evt)
+  {
+      data = JSON.parse(evt.data)
+    if (data["func"] == "Login") {
+        if (data["success"] == "True") {
+            user = data["username"]
+            writeToScreen("User " + data["username"] + " logged in!!")
+            successful_login(data["username"])
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> Login failed!!')
+        }
+    }
+    if (data["func"] == "Logout") {
+        if (data["success"] == "False") {
+            writeToScreen("User " + data["username"] + " is not logged in!!")
+            
+        }
+       
+    }
+    if (data["func"] == "Register") {
+        if (data["success"] == "True") {
+            user = data["username"]
+            writeToScreen("User " + data["username"] + " registerd & logged in!!")
+            successful_login(data["username"])
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> User has already been registered!!')
+        }
+    }
+    if (data["func"] == "Tweet") {
+        if (data["success"] == "True") {
+            writeToScreen("You have successfully tweeted!!")
+        }
+        else {
+            writeToScreen("Tweet failed!!")
+        }
+    }
+    if (data["func"] == "Hashtag") {
+        if (data["success"] == "True") {
+            writeinBold("Tweets related to hashtag " + data["hashtag"] + " are:")
+            tweets = String(data["results"]).split(",")
+            for (var i = 0; i < tweets.length; i++) {
+                writeToScreen(tweets[i])
+                writeToScreen("")
+            }
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> No tweets found with hashtag ' + data["hashtag"])
+        }
+    }
+    if (data["func"] == "Mention") {
+        if (data["success"] == "True") {
+            writeinBold("Tweets related to mention " + data["mention"] + " are:")
+            tweets = String(data["results"]).split(",")
+            for (var i = 0; i < tweets.length; i++) {
+                writeToScreen(tweets[i])
+                writeToScreen("")
+            }
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> No tweets found with mention ' + data["mention"])
+        }
+    }
+    if (data["func"] == "Subscribe") {
+        if (data["success"] == "True") {
+            writeToScreen("Successfully subscribed to user - " + data["subscribe"])
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> Subscribe to user ' + data["subscribe"] + ' failed!')
+        }
+    }
+    if (data["func"] == "Unsubscribe") {
+        if (data["success"] == "True") {
+            writeToScreen("Successfully unsubscribed to user - " + data["unsubscribe"])
+        }
+        else {
+            writeToScreen('<span style="color: red;">ERROR:</span> Unsubscribe to user ' + data["unsubscribe"] + ' failed!')
+        }
+    }
+    if (data["func"] == "Feed") {
+        if (data["success"] == "True") {
+            writeinBold("New Feed:")
+            tweets = String(data["feed"]).split(",")
+            var i = 0
+            for (var i = 0; i < tweets.length; i=i+2) {
+                writeToScreen(tweets[i] + ": ")
+                writeToScreen(tweets[i + 1])
+                retw = tweets[i + 1]
+
+                var retweet_btn = document.createElement("BUTTON")
+                retweet_btn.innerHTML = "RETWEET"
+                output.appendChild(retweet_btn)
+                retweet_btn.onclick = function (evt) { func_after_tweet(evt, user, retw) };
+                //i = i + 2
+                
+                
+            }
+
+        }
+    }
+    
+  }
+    function successful_login(user) {
+      writeToScreen("Select your choice")
+      var tweet_btn = document.createElement("BUTTON")
+      tweet_btn.innerHTML = "TWEET";
+      output.appendChild(tweet_btn);
+      tweet_btn.onclick = function (evt) { func_tweet(evt, user) };
+
+      var query_hashtag_btn = document.createElement("BUTTON")
+      query_hashtag_btn.innerHTML = "QUERY HASHTAG";
+      output.appendChild(query_hashtag_btn);
+      query_hashtag_btn.style = "margin-left:30px;"
+      query_hashtag_btn.onclick = function (evt) { func_query_hashtag(evt, user) };
+
+      var query_mention_btn = document.createElement("BUTTON")
+      query_mention_btn.innerHTML = "QUERY MENTION";
+      output.appendChild(query_mention_btn);
+      query_mention_btn.style = "margin-left:30px;"
+      query_mention_btn.onclick = function (evt) { func_query_mention(evt, user) };
+
+      var subscribe_btn = document.createElement("BUTTON")
+      subscribe_btn.innerHTML = "SUBSCRIBE";
+      output.appendChild(subscribe_btn);
+      subscribe_btn.style = "margin-left:30px;"
+      subscribe_btn.onclick = function (evt) { func_subscribe(evt, user) };
+
+      var unsubscribe_btn = document.createElement("BUTTON")
+      unsubscribe_btn.innerHTML = "UNSUBSCRIBE";
+      output.appendChild(unsubscribe_btn);
+      unsubscribe_btn.style = "margin-left:30px;"
+      unsubscribe_btn.onclick = function (evt) { func_unsubscribe(evt, user) };
+
+
+        var logout_btn = document.createElement("BUTTON")
+        logout_btn.innerHTML = "LOGOUT";
+        output.appendChild(logout_btn);
+        logout_btn.style = "margin-left:30px;"
+        logout_btn.onclick = function (evt) { func_after_logout(evt, user) }
+  }
+  function onError(evt)
+  {
+      //writeToScreen('<span style="color: red;">ERROR:</span> ' + evt.data);
+      websocket.close();
+  }
+  function doSend(message)
+  {
+    //writeToScreen("SENT: " + message);
+
+    websocket.send(message);
+  }
+
+  function writeinBold(message) {
+        var pre = document.createElement("h4");
+        pre.style.wordWrap = "break-word";
+        pre.innerHTML = message;
+        output.appendChild(pre);
+  }
+
+  function writeToScreen(message)
+  {
+    var pre = document.createElement("p");
+    pre.style.wordWrap = "break-word";
+    pre.innerHTML = message;
+    output.appendChild(pre);
+  }
+
+  window.addEventListener("load", init, false);</script>
+
+<h2>Twitter</h2>
+
+<div id="output"></div>
